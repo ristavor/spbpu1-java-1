@@ -1,13 +1,43 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-void main() {
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    IO.println(String.format("Hello and welcome!"));
+import javax.swing.*;
 
-    for (int i = 1; i <= 5; i++) {
-        //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-        // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        IO.println("i = " + i);
+/**
+ * Точка входа в программу симуляции искусственной жизни
+ * <p>
+ * Реализация идеи Криса Лэнгтона об искусственной жизни.
+ * Окружение представлено в виде тороидальной сетки.
+ * Агенты (хищники и травоядные) живут в окружении.
+ * Каждый агент занимает одну клетку.
+ * <p>
+ * Агент состоит из трех частей: сенсоры, мозг (нейронная сеть) и действия.
+ * <p>
+ * БЫСТРЫЙ СТАРТ:
+ * 1. Запустите этот класс (Run 'Main.main()')
+ * 2. Откроется окно симуляции
+ * 3. Нажмите кнопку "Старт" для запуска
+ * 4. Наблюдайте за эволюцией агентов!
+ * <p>
+ * ВИЗУАЛИЗАЦИЯ:
+ * - Зеленые квадраты = растения
+ * - Синие круги = травоядные
+ * - Красные круги = хищники
+ * - Белая линия = направление движения агента
+ * <p>
+ * УПРАВЛЕНИЕ:
+ * - Старт/Стоп - запуск/остановка симуляции
+ * - Шаг - один шаг симуляции вручную
+ * - Сброс - перезапуск с начальными параметрами
+ * - Слайдер - регулировка скорости симуляции
+ *
+ * @author AI Life Simulation
+ * @version 1.0
+ */
+public class Main {
+    static void main(String[] args) {
+        // Запускаем симуляцию в EDT (Event Dispatch Thread) для корректной работы Swing
+        SwingUtilities.invokeLater(() -> {
+            // Создаем симуляцию с сеткой 80x60 клеток
+            // Можно изменить размер: new Simulation(ширина, высота)
+            new Simulation(80, 60);
+        });
     }
 }
