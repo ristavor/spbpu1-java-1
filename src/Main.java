@@ -1,8 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.*;
+import java.util.Random;
 
 /**
  * Artificial Life Simulation - single-file Java 25 implementation
@@ -49,14 +50,11 @@ public class Main extends JFrame {
     }
 
     private final SimConfig config;
-
     private Environment environment;
     private final SimulationPanel panel;
     private final JLabel infoLabel;
     private final JSlider speedSlider;
     private final JButton startPauseButton;
-    private final JButton resetButton;
-    private final JButton stepButton;
 
     // UI-поля для конфигурации
     private final JSpinner gridSizeSpinner;
@@ -72,13 +70,6 @@ public class Main extends JFrame {
     private javax.swing.Timer timer;
     private boolean running = false;
     private long generation = 0;
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            Main main = new Main();
-            main.setVisible(true);
-        });
-    }
 
     public Main() {
         super("Искусственная жизнь (нейросети, хищники / травоядные)");
@@ -167,16 +158,16 @@ public class Main extends JFrame {
         updateInfoLabel();
 
         startPauseButton = new JButton("Старт");
-        startPauseButton.addActionListener(e -> toggleRunning());
+        startPauseButton.addActionListener(_ -> toggleRunning());
 
-        stepButton = new JButton("Шаг");
-        stepButton.addActionListener(e -> doOneStep());
+        JButton stepButton = new JButton("Шаг");
+        stepButton.addActionListener(_ -> doOneStep());
 
-        resetButton = new JButton("Сброс");
-        resetButton.addActionListener(e -> resetSimulation());
+        JButton resetButton = new JButton("Сброс");
+        resetButton.addActionListener(_ -> resetSimulation());
 
         speedSlider = new JSlider(0, 100, 50);
-        speedSlider.addChangeListener(e -> {
+        speedSlider.addChangeListener(_ -> {
             int delay = sliderToDelay(speedSlider.getValue());
             if (timer != null) {
                 timer.setDelay(delay);
@@ -199,7 +190,7 @@ public class Main extends JFrame {
         add(panel, BorderLayout.CENTER);
         add(controlPanel, BorderLayout.SOUTH);
 
-        timer = new javax.swing.Timer(DEFAULT_DELAY, e -> {
+        timer = new javax.swing.Timer(DEFAULT_DELAY, _ -> {
             environment.step();
             generation++;
             updateInfoLabel();
@@ -210,8 +201,14 @@ public class Main extends JFrame {
         setLocationRelativeTo(null);
     }
 
+    static void main() {
+        SwingUtilities.invokeLater(() -> {
+            Main main = new Main();
+            main.setVisible(true);
+        });
+    }
+
     private int sliderToDelay(int sliderValue) {
-        // 0 -> MIN_DELAY, 100 -> MAX_DELAY (инвертированная шкала)
         double t = sliderValue / 100.0;
         return (int) (MIN_DELAY + t * (MAX_DELAY - MIN_DELAY));
     }
@@ -351,6 +348,8 @@ public class Main extends JFrame {
     // ==== NEURAL NETWORK ====
 
     private static class NeuralNetwork {
+        private static final double MUTATION_STD = 0.05;
+
         private final double[][] weights; // [output][input]
         private final double[] biases;    // [output]
         private final Random rnd;
@@ -394,13 +393,13 @@ public class Main extends JFrame {
             return ActionType.values()[bestIndex];
         }
 
-        NeuralNetwork copyWithMutation(double mutationStd) {
+        NeuralNetwork copyWithMutation() {
             double[][] newW = new double[NN_OUTPUTS][NN_INPUTS];
             double[] newB = new double[NN_OUTPUTS];
             for (int i = 0; i < NN_OUTPUTS; i++) {
-                newB[i] = biases[i] + rnd.nextGaussian() * mutationStd;
+                newB[i] = biases[i] + rnd.nextGaussian() * MUTATION_STD;
                 for (int j = 0; j < NN_INPUTS; j++) {
-                    newW[i][j] = weights[i][j] + rnd.nextGaussian() * mutationStd;
+                    newW[i][j] = weights[i][j] + rnd.nextGaussian() * MUTATION_STD;
                 }
             }
             return new NeuralNetwork(rnd, newW, newB);
@@ -581,7 +580,6 @@ public class Main extends JFrame {
             Cell to = grid[ny][nx];
 
             if (to.agent != null) {
-                // If carnivore and there is herbivore ahead, move & eat
                 if (a.species == Species.CARNIVORE && to.agent.species == Species.HERBIVORE) {
                     Agent victim = to.agent;
                     victim.alive = false;
@@ -658,7 +656,7 @@ public class Main extends JFrame {
 
             if (childEnergy <= 0) return;
 
-            NeuralNetwork childBrain = parent.brain.copyWithMutation(0.05);
+            NeuralNetwork childBrain = parent.brain.copyWithMutation();
             Agent child = new Agent(
                     parent.species,
                     pos[0],
@@ -828,11 +826,10 @@ public class Main extends JFrame {
                         int tipX = cx + dx * r;
                         int tipY = cy + dy * r;
                         int ortX = -dy;
-                        int ortY = dx;
                         int base1X = cx + ortX * (r / 2);
-                        int base1Y = cy + ortY * (r / 2);
+                        int base1Y = cy + dx * (r / 2);
                         int base2X = cx - ortX * (r / 2);
-                        int base2Y = cy - ortY * (r / 2);
+                        int base2Y = cy - dx * (r / 2);
 
                         Polygon p = new Polygon();
                         p.addPoint(tipX, tipY);
